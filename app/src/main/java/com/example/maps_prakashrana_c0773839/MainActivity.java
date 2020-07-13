@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-public class MainActivity extends AppCompatActivity  implements OnMapReadyCallback,  GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnPolylineClickListener {
+public class MainActivity extends AppCompatActivity  implements OnMapReadyCallback,  GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnPolygonClickListener {
 
     private static final int REQUEST_CODE = 1;
     private static final int POLYGON_SIDES = 4;
@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
         Paint textPaint = new Paint(); // Adapt to your needs
 
-        textPaint.setTextSize(30);
+        textPaint.setTextSize(35);
         float textWidth = textPaint.measureText(text);
         float textHeight = textPaint.getTextSize();
         int width = (int) (textWidth);
@@ -90,7 +90,6 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         // Set a background in order to see the
         // full size and positioning of the bitmap.
         // Remove that for a fully transparent icon.
-        canvas.drawColor(Color.LTGRAY);
 
         canvas.drawText(text, 0, 0, textPaint);
         BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(image);
@@ -103,6 +102,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         mMap.setOnMapLongClickListener(this);
         mMap.setOnMapClickListener(this);
         mMap.setOnPolylineClickListener(this);
+        mMap.setOnPolygonClickListener(this);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -321,6 +321,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         // add polygon as per convex hull lat long
         options.addAll(sortedLatLong);
         shape = mMap.addPolygon(options);
+        shape.setClickable(true);
 
         // draw the polyline too
         LatLng[] polyLinePoints = new LatLng[sortedLatLong.size() + 1];
@@ -413,6 +414,19 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
     @Override
     public void onPolylineClick(Polyline polyline) {
+
+        List<LatLng> points = polyline.getPoints();
+        LatLng firstPoint = points.remove(0);
+        LatLng secondPoint = points.remove(0);
+
+        LatLng center = LatLngBounds.builder().include(firstPoint).include(secondPoint).build().getCenter();
+        MarkerOptions options = new MarkerOptions().position(center)
+                .draggable(true)
+                .icon(createPureTextIcon(getDistanceOfPolyLine(polyline)));
+        distanceMarkers.add(mMap.addMarker(options));
+    }
+
+    public String getDistanceOfPolyLine(Polyline polyline){
         List<LatLng> points = polyline.getPoints();
         LatLng firstPoint = points.remove(0);
         LatLng secondPoint = points.remove(0);
@@ -421,12 +435,39 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         double distance = distance(firstPoint.latitude,firstPoint.longitude,
                 secondPoint.latitude,secondPoint.longitude);
         NumberFormat formatter = new DecimalFormat("#0.0");
+        return formatter.format(distance) + " KM";
+    }
+
+    public String getDistanceOfPolyLines(ArrayList<Polyline> polylines){
+
+        double totalDistance = 0;
+        for(Polyline polyline : polylines){
+            List<LatLng> points = polyline.getPoints();
+            LatLng firstPoint = points.remove(0);
+            LatLng secondPoint = points.remove(0);
 
 
-        LatLng center = LatLngBounds.builder().include(firstPoint).include(secondPoint).build().getCenter();
+            double distance = distance(firstPoint.latitude,firstPoint.longitude,
+                    secondPoint.latitude,secondPoint.longitude);
+           totalDistance += distance;
+
+        }
+        NumberFormat formatter = new DecimalFormat("#0.0");
+
+        return formatter.format(totalDistance) + " KM";
+    }
+
+    @Override
+    public void onPolygonClick(Polygon polygon) {
+        LatLngBounds.Builder builder = LatLngBounds.builder();
+        for(LatLng point: polygon.getPoints()){
+            builder.include(point);
+        }
+        LatLng center = builder.build().getCenter();
         MarkerOptions options = new MarkerOptions().position(center)
                 .draggable(true)
-                .icon(createPureTextIcon(formatter.format(distance) + " KM"));
+                .icon(createPureTextIcon(getDistanceOfPolyLines(polylines)));
         distanceMarkers.add(mMap.addMarker(options));
+
     }
 }
