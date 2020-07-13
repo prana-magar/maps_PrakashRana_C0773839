@@ -1,16 +1,19 @@
 package com.example.maps_prakashrana_c0773839;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.ColorDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -35,7 +38,6 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.IOException;
-import java.sql.ClientInfoStatus;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -379,7 +381,80 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     @Override
     public void onMapLongClick(LatLng latLng) {
 
+        // no markers set yet
+        if(markers.size() == 0){
+            return;
+        }
+        // find the nearest marker
+        double minDistance = Double.MAX_VALUE;
+        Marker nearestMarker = null;
 
+        for(Marker marker: markers){
+            double currDistance = distance(marker.getPosition().latitude,
+                    marker.getPosition().longitude,
+                    latLng.latitude,
+                    latLng.longitude);
+            if(currDistance < minDistance){
+                minDistance = currDistance;
+                nearestMarker = marker;
+            }
+        }
+
+        // delete nearest marker
+        if(nearestMarker != null){
+            nearestMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_red));
+            final Marker finalNearestMarker = nearestMarker;
+            AlertDialog.Builder imageDialog = new AlertDialog.Builder(this);
+
+            imageDialog
+                    .setTitle("Delete Highlighted Marker")
+                    .setMessage("Delete Marker highlighted in Red?")
+
+                    // Specifying a listener allows you to take an action before dismissing the dialog.
+                    // The dialog is automatically dismissed when a dialog button is clicked.
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            // Continue with delete operation
+                            finalNearestMarker.remove();
+                            markers.remove(finalNearestMarker);
+
+                            for(Polyline polyline: polylines){
+                                polyline.remove();
+                            }
+                            polylines.clear();
+
+                            if(shape != null){
+                                shape.remove();
+                                shape = null;
+                            }
+
+
+                            for(Marker currMarker: distanceMarkers){
+                                currMarker.remove();
+                            }
+                            distanceMarkers.clear();
+
+                        }
+                    })
+
+                    // A null listener allows the button to dismiss the dialog and take no further action.
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            // Continue with cancel operation
+                            finalNearestMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker));
+
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert);
+
+            AlertDialog dialog = imageDialog.create();
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.argb(50,1,0,0)));
+            dialog.show();
+
+
+
+
+        }
     }
 
     @Override
