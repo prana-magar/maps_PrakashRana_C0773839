@@ -190,6 +190,15 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                     }
                 }
 
+                // update the geocode data
+                String[] geoData = getTitleSnippet(marker.getPosition());
+                String title = geoData[0];
+                String snippet = geoData[1];
+
+                marker.setTitle(title);
+                marker.setSnippet(snippet);
+
+
                 if (markers.size() == POLYGON_SIDES) {
                     for(Polyline line: polylines){
                         line.remove();
@@ -239,8 +248,8 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         }
     }
 
-    private void setMarker(LatLng latLng){
 
+    private String[] getTitleSnippet(LatLng latLng){
         Geocoder geoCoder = new Geocoder(this);
         Address address = null;
 
@@ -299,6 +308,18 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
         snippet = TextUtils.join(", ",snippetComponents);
 
+        String[] result = new String[2];
+        result[0] = title;
+        result[1] = snippet;
+        return  result;
+    }
+
+    private void setMarker(LatLng latLng){
+
+
+        String[] geoData = getTitleSnippet(latLng);
+        String title = geoData[0];
+        String snippet = geoData[1];
 
         MarkerOptions options = new MarkerOptions().position(latLng)
                 .draggable(true)
