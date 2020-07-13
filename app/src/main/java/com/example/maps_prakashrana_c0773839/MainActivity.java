@@ -30,6 +30,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.IOException;
+import java.sql.ClientInfoStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     Polyline line;
     Polygon shape;
     List<Marker> markers = new ArrayList<>();
+    ArrayList<Polyline> polylines = new ArrayList<>();
     //location with location manager and listner
     LocationManager locationManager;
     LocationListener locationListener;
@@ -135,7 +137,9 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             public void onMarkerDragEnd(Marker marker) {
 
                 if (markers.size() == POLYGON_SIDES) {
-                    line.remove();
+                    for(Polyline line: polylines){
+                        line.remove();
+                    }
                     shape.remove();
                     shape = null;
                     drawShape();
@@ -286,10 +290,16 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                 polyLinePoints[index] = sortedLatLong.elementAt(0);
             }
         }
-        line = mMap.addPolyline(new PolylineOptions()
-                .clickable(true)
-                .add(polyLinePoints)
-                .color(Color.RED));
+
+        for(int i =0 ; i<polyLinePoints.length -1 ; i++){
+
+            LatLng[] tempArr = {polyLinePoints[i], polyLinePoints[i+1] };
+            polylines.add(mMap.addPolyline(new PolylineOptions()
+                    .clickable(true)
+                    .add(tempArr)
+                    .color(Color.RED)));
+        }
+
 
     }
 
@@ -300,7 +310,9 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         }
 
         markers.clear();
-        line.remove();
+        for(Polyline line: polylines){
+            line.remove();
+        }
         shape.remove();
         shape = null;
 
