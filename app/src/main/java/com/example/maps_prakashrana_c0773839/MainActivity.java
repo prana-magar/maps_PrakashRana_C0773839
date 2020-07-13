@@ -8,10 +8,13 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -26,6 +29,7 @@ import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -170,11 +174,71 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     }
 
     private void setMarker(LatLng latLng){
+
+        Geocoder geoCoder = new Geocoder(this);
+        Address address = null;
+
+        try{
+            List<Address> matches = geoCoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+            address = (matches.isEmpty() ? null : matches.get(0));
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+
+        String title = "";
+        String snippet = "";
+
+        ArrayList<String> titleComponents = new ArrayList<>();
+        ArrayList<String> snippetComponents = new ArrayList<>();
+
+        if(address != null){
+            // get title
+            if(address.getSubThoroughfare() != null)
+            {
+                titleComponents.add(address.getSubThoroughfare());
+
+            }
+            if(address.getThoroughfare() != null)
+            {
+
+                titleComponents.add(address.getThoroughfare());
+
+            }
+            if(address.getPostalCode() != null)
+            {
+
+                titleComponents.add(address.getPostalCode());
+
+            }
+
+
+            // get snippet
+
+            if(address.getLocality() != null)
+            {
+                snippetComponents.add(address.getLocality());
+
+            }
+            if(address.getAdminArea() != null)
+            {
+                snippetComponents.add(address.getAdminArea());
+
+            }
+
+        }
+
+        title = TextUtils.join(", ",titleComponents);
+        title = (title.equals("") ? "  " : title);
+
+        snippet = TextUtils.join(", ",snippetComponents);
+
+
         MarkerOptions options = new MarkerOptions().position(latLng)
                 .draggable(true)
-                .title("Your Destination")
+                .title(title)
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
-                .snippet("Your Long Tapped location");
+                .snippet(snippet);
 
 
         // check if there are already the same number of markers, we clear the map
