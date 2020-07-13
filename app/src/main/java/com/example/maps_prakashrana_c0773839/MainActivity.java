@@ -414,7 +414,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             Polyline currentPolyline =  mMap.addPolyline(new PolylineOptions()
                     .clickable(true)
                     .add(tempArr)
-                    .color(Color.RED));
+                    .color(Color.argb(60,255,0,0)));
             currentPolyline.setClickable(true);
             polylines.add(currentPolyline);
         }
