@@ -181,6 +181,15 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             @Override
             public void onMarkerDragEnd(Marker marker) {
 
+
+                // update the city label marker location
+                String cityLabelText  = marker.getTag().toString();
+                for(Marker labelMarker : cityMarkers){
+                    if(labelMarker.getTag().toString().equals(cityLabelText)){
+                        labelMarker.setPosition(new LatLng(marker.getPosition().latitude - 0.08, marker.getPosition().longitude));
+                    }
+                }
+
                 if (markers.size() == POLYGON_SIDES) {
                     for(Polyline line: polylines){
                         line.remove();
@@ -313,6 +322,10 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
 
         // Add city Label Marker
+       addCityLabelMarker(latLng, mm);
+    }
+
+    private void addCityLabelMarker(LatLng latLng, Marker locationMarker){
         ArrayList<Character> arr = new ArrayList<>();
         arr.add('A');
         arr.add('B');
@@ -323,11 +336,12 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             arr.remove((Character) marker.getTag());
         }
 
+        locationMarker.setTag(arr.get(0).toString());
+
         LatLng labelLatLng = new LatLng(latLng.latitude - 0.08,latLng.longitude);
         MarkerOptions optionsCityLabel = new MarkerOptions().position(labelLatLng)
                 .draggable(false)
-                .icon(createPureTextIcon(arr.get(0).toString()))
-                .snippet(snippet);
+                .icon(createPureTextIcon(arr.get(0).toString()));
         Marker labelMarker = mMap.addMarker(optionsCityLabel);
         labelMarker.setTag(arr.get(0));
 
