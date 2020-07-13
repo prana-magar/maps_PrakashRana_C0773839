@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-public class MainActivity extends AppCompatActivity  implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity  implements OnMapReadyCallback,  GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener {
 
     private static final int REQUEST_CODE = 1;
     private static final int POLYGON_SIDES = 4;
@@ -54,11 +54,15 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+
     }
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setOnMapLongClickListener(this);
+        mMap.setOnMapClickListener(this);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -96,88 +100,40 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
         }
 
+
+
         //apply long gesture
-        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+
+
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
-            public void onMapLongClick(LatLng latLng) {
-
-                // set marker
-                setMarker(latLng);
-
-            }
-
-            private void setMarker(LatLng latLng) {
-                MarkerOptions options = new MarkerOptions().position(latLng)
-                        .title("Your Destination")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                        .snippet("Your Long Tapped location");
-/*
-                if (destMarker !=  null){ clearMap(); }
-
-                    destMarker = mMap.addMarker(options);
-
-                drawLine();*/
-
-                // check if there are already the same number of markers, we clear the map
-                if(markers.size() == POLYGON_SIDES){ clearMap(); }
-
-                markers.add(mMap.addMarker(options));
-
-                if(markers.size() ==  POLYGON_SIDES){ drawShape(); }
-            }
-
-            private void drawShape() {
-                PolygonOptions options = new PolygonOptions()
-                        .fillColor(Color.argb(35,0,1,0))
-                        .strokeWidth(0)
-                        ;
-
-
-                LatLng[] markersConvex = new LatLng[4];
-                for(int i = 0; i<POLYGON_SIDES; i++){
-                    markersConvex[i] = new LatLng(markers.get(i).getPosition().latitude,
-                            markers.get(i).getPosition().longitude);
+            public boolean onMarkerClick(Marker marker) {
+                System.out.println("marker Clicked"+marker.isInfoWindowShown());
+                if(marker.isInfoWindowShown()){
+                    marker.hideInfoWindow();
                 }
-
-
-                Vector<LatLng> sortedLatLong = ConvexHullJarvis.convexHull(markersConvex, POLYGON_SIDES);
-
-                // add polygon as per convex hull lat long
-                options.addAll(sortedLatLong);
-              shape = mMap.addPolygon(options);
-
-              // draw the polyline too
-                LatLng[] polyLinePoints = new LatLng[sortedLatLong.size()+1];
-                int index = 0;
-                for(LatLng x: sortedLatLong){
-                    polyLinePoints[index] = x;
-
-                    index++;
-                    if(index == sortedLatLong.size()){
-                        // at last add initial point
-                        polyLinePoints[index] = sortedLatLong.elementAt(0);
-                    }
+                else{
+                    marker.showInfoWindow();
                 }
-                line= googleMap.addPolyline(new PolylineOptions()
-                        .clickable(true)
-                        .add(polyLinePoints)
-                        .color(Color.RED));
+                return true;
+            }
+        });
+
+        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+            @Override
+            public void onMarkerDragStart(Marker marker) {
+                System.out.println("dragged");
+            }
+
+            @Override
+            public void onMarkerDrag(Marker marker) {
 
             }
 
-            private void clearMap() {
-
-                for(Marker marker: markers){
-                    marker.remove();
-                }
-
-                markers.clear();
-                line.remove();
-                shape.remove();
-                shape = null;
+            @Override
+            public void onMarkerDragEnd(Marker marker) {
 
             }
-
         });
     }
 
@@ -209,7 +165,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
         MarkerOptions options = new MarkerOptions().position(userLocation)
                 .title("You are here")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+              .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
                 .snippet("Your Location");
         homeMarker = mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15));
@@ -224,5 +180,91 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
             }
         }
+    }
+
+    private void setMarker(LatLng latLng){
+        MarkerOptions options = new MarkerOptions().position(latLng)
+                .draggable(true)
+                .title("Your Destination")
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
+                .snippet("Your Long Tapped location");
+
+
+        // check if there are already the same number of markers, we clear the map
+        if (markers.size() == POLYGON_SIDES) {
+            clearMap();
+        }
+
+        Marker mm = mMap.addMarker(options);
+
+        markers.add(mm);
+
+        if (markers.size() == POLYGON_SIDES) {
+            drawShape();
+        }
+    }
+
+    private void drawShape (){
+        PolygonOptions options = new PolygonOptions()
+                .fillColor(Color.argb(35, 0, 1, 0))
+                .strokeWidth(0);
+
+
+        LatLng[] markersConvex = new LatLng[4];
+        for (int i = 0; i < POLYGON_SIDES; i++) {
+            markersConvex[i] = new LatLng(markers.get(i).getPosition().latitude,
+                    markers.get(i).getPosition().longitude);
+        }
+
+
+        Vector<LatLng> sortedLatLong = ConvexHullJarvis.convexHull(markersConvex, POLYGON_SIDES);
+
+        // add polygon as per convex hull lat long
+        options.addAll(sortedLatLong);
+        shape = mMap.addPolygon(options);
+
+        // draw the polyline too
+        LatLng[] polyLinePoints = new LatLng[sortedLatLong.size() + 1];
+        int index = 0;
+        for (LatLng x : sortedLatLong) {
+            polyLinePoints[index] = x;
+
+            index++;
+            if (index == sortedLatLong.size()) {
+                // at last add initial point
+                polyLinePoints[index] = sortedLatLong.elementAt(0);
+            }
+        }
+        line = mMap.addPolyline(new PolylineOptions()
+                .clickable(true)
+                .add(polyLinePoints)
+                .color(Color.RED));
+
+    }
+
+    private void clearMap() {
+
+        for (Marker marker : markers) {
+            marker.remove();
+        }
+
+        markers.clear();
+        line.remove();
+        shape.remove();
+        shape = null;
+
+    }
+
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+
+        System.out.println("long press");
+        setMarker(latLng);
+
+    }
+
+    @Override
+    public void onMapClick(LatLng latLng) {
+        System.out.println("short clicked");
     }
 }
