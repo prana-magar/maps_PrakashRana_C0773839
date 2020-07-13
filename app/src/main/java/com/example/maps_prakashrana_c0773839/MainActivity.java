@@ -83,7 +83,8 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
         Paint textPaint = new Paint(); // Adapt to your needs
 
-        textPaint.setTextSize(35);
+        textPaint.setTextSize(38);
+        textPaint.setFakeBoldText(true);
         float textWidth = textPaint.measureText(text);
         float textHeight = textPaint.getTextSize();
         int width = (int) (textWidth);
@@ -322,7 +323,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             arr.remove((Character) marker.getTag());
         }
 
-        LatLng labelLatLng = new LatLng(latLng.latitude - 0.05,latLng.longitude);
+        LatLng labelLatLng = new LatLng(latLng.latitude - 0.08,latLng.longitude);
         MarkerOptions optionsCityLabel = new MarkerOptions().position(labelLatLng)
                 .draggable(false)
                 .icon(createPureTextIcon(arr.get(0).toString()))
@@ -335,7 +336,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
     private void drawShape (){
         PolygonOptions options = new PolygonOptions()
-                .fillColor(Color.argb(65, 0, 255, 0))
+                .fillColor(Color.argb(35, 0, 255, 0))
                 .strokeWidth(0);
 
 
@@ -428,6 +429,11 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             marker.remove();
         }
         markers.clear();
+
+        for (Marker marker : cityMarkers) {
+            marker.remove();
+        }
+        cityMarkers.clear();
 
         // remove polylines outer
         for(Polyline line: polylines){
