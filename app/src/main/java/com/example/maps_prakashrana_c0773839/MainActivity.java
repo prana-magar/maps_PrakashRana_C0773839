@@ -41,7 +41,10 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 
 public class MainActivity extends AppCompatActivity  implements OnMapReadyCallback,  GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnPolygonClickListener {
@@ -52,6 +55,11 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     Polygon shape;
     List<Marker> markers = new ArrayList<>();
     List<Marker> distanceMarkers = new ArrayList<>();
+    List<Marker> cityMarkers = new ArrayList<>();
+    ArrayList<Character> labelTaken = new ArrayList<>();
+    HashMap<LatLng, Character> markerLabelMap = new HashMap<>();
+
+
 
     ArrayList<Polyline> polylines = new ArrayList<>();
     //location with location manager and listner
@@ -303,11 +311,35 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         if (markers.size() == POLYGON_SIDES) {
             drawShape();
         }
+
+
+        // Add city Label Marker
+        Character label = 'A';
+        Character[] arr = {'A','B','C','D'};
+        for(Character c: arr){
+            if(labelTaken.contains(c)){
+                continue;
+            }
+            label = c;
+            break;
+        }
+
+        LatLng labelLatLng = new LatLng(latLng.latitude - 0.05,latLng.longitude);
+        MarkerOptions optionsCityLabel = new MarkerOptions().position(labelLatLng)
+                .draggable(false)
+                .icon(createPureTextIcon(label.toString()))
+                .snippet(snippet);
+        Marker labelMarker = mMap.addMarker(optionsCityLabel);
+
+        cityMarkers.add(labelMarker);
+        labelTaken.add(label);
+        markerLabelMap.put(labelMarker.getPosition(),label);
+
     }
 
     private void drawShape (){
         PolygonOptions options = new PolygonOptions()
-                .fillColor(Color.argb(35, 0, 1, 0))
+                .fillColor(Color.argb(65, 0, 255, 0))
                 .strokeWidth(0);
 
 
@@ -459,6 +491,9 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                             finalNearestMarker.remove();
                             markers.remove(finalNearestMarker);
 
+                            labelTaken.remove(markerLabelMap.get(finalNearestMarker.getPosition()));
+                            markerLabelMap.remove(finalNearestMarker);
+
                             for(Polyline polyline: polylines){
                                 polyline.remove();
                             }
@@ -470,10 +505,13 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                             }
 
 
+
                             for(Marker currMarker: distanceMarkers){
                                 currMarker.remove();
                             }
                             distanceMarkers.clear();
+
+
 
                         }
                     })
@@ -489,7 +527,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                     .setIcon(android.R.drawable.ic_dialog_alert);
 
             AlertDialog dialog = imageDialog.create();
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.argb(50,1,0,0)));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.argb(50,255,0,0)));
             dialog.show();
 
 
