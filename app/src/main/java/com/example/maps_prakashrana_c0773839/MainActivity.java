@@ -456,6 +456,8 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         }
         // find the nearest marker
         double minDistance = Double.MAX_VALUE;
+        double minCityLabelDistance = Double.MAX_VALUE;
+
         Marker nearestMarker = null;
         Marker nearestCityMarker = null;
 
@@ -477,8 +479,8 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                     marker.getPosition().longitude,
                     latLng.latitude,
                     latLng.longitude);
-            if(currDistance < minDistance){
-                minDistance = currDistance;
+            if(currDistance < minCityLabelDistance){
+                minCityLabelDistance = currDistance;
                 nearestCityMarker = marker;
             }
         }
@@ -549,7 +551,6 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
     @Override
     public void onMapClick(LatLng latLng) {
-        System.out.println("long press");
         setMarker(latLng);
 
     }
