@@ -56,8 +56,6 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     List<Marker> markers = new ArrayList<>();
     List<Marker> distanceMarkers = new ArrayList<>();
     List<Marker> cityMarkers = new ArrayList<>();
-    ArrayList<Character> labelTaken = new ArrayList<>();
-    HashMap<LatLng, Character> markerLabelMap = new HashMap<>();
 
 
 
@@ -314,27 +312,25 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
 
         // Add city Label Marker
-        Character label = 'A';
-        Character[] arr = {'A','B','C','D'};
-        for(Character c: arr){
-            if(labelTaken.contains(c)){
-                continue;
-            }
-            label = c;
-            break;
+        ArrayList<Character> arr = new ArrayList<>();
+        arr.add('A');
+        arr.add('B');
+        arr.add('C');
+        arr.add('D');
+
+        for(Marker marker :cityMarkers){
+            arr.remove((Character) marker.getTag());
         }
 
         LatLng labelLatLng = new LatLng(latLng.latitude - 0.05,latLng.longitude);
         MarkerOptions optionsCityLabel = new MarkerOptions().position(labelLatLng)
                 .draggable(false)
-                .icon(createPureTextIcon(label.toString()))
+                .icon(createPureTextIcon(arr.get(0).toString()))
                 .snippet(snippet);
         Marker labelMarker = mMap.addMarker(optionsCityLabel);
+        labelMarker.setTag(arr.get(0));
 
         cityMarkers.add(labelMarker);
-        labelTaken.add(label);
-        markerLabelMap.put(labelMarker.getPosition(),label);
-
     }
 
     private void drawShape (){
@@ -461,6 +457,8 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         // find the nearest marker
         double minDistance = Double.MAX_VALUE;
         Marker nearestMarker = null;
+        Marker nearestCityMarker = null;
+
 
         for(Marker marker: markers){
             double currDistance = distance(marker.getPosition().latitude,
@@ -473,12 +471,25 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             }
         }
 
+        //  nearest city markers
+        for(Marker marker: cityMarkers){
+            double currDistance = distance(marker.getPosition().latitude,
+                    marker.getPosition().longitude,
+                    latLng.latitude,
+                    latLng.longitude);
+            if(currDistance < minDistance){
+                minDistance = currDistance;
+                nearestCityMarker = marker;
+            }
+        }
+
         // delete nearest marker
-        if(nearestMarker != null){
+        if(nearestMarker != null  && nearestCityMarker != null){
             nearestMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_red));
             final Marker finalNearestMarker = nearestMarker;
             AlertDialog.Builder imageDialog = new AlertDialog.Builder(this);
 
+            final Marker finalNearestCityMarker = nearestCityMarker;
             imageDialog
                     .setTitle("Delete Highlighted Marker")
                     .setMessage("Delete Marker highlighted in Red?")
@@ -491,8 +502,8 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                             finalNearestMarker.remove();
                             markers.remove(finalNearestMarker);
 
-                            labelTaken.remove(markerLabelMap.get(finalNearestMarker.getPosition()));
-                            markerLabelMap.remove(finalNearestMarker);
+                            finalNearestCityMarker.remove();
+                            cityMarkers.remove(finalNearestCityMarker);
 
                             for(Polyline polyline: polylines){
                                 polyline.remove();
