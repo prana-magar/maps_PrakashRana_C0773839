@@ -41,8 +41,6 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     LocationManager locationManager;
     LocationListener locationListener;
     private GoogleMap mMap;
-    private Marker homeMarker;
-    private Marker destMarker;
 
 
 
@@ -122,7 +120,6 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker marker) {
-                System.out.println("dragged");
             }
 
             @Override
@@ -133,6 +130,12 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             @Override
             public void onMarkerDragEnd(Marker marker) {
 
+                if (markers.size() == POLYGON_SIDES) {
+                    line.remove();
+                    shape.remove();
+                    shape = null;
+                    drawShape();
+                }
             }
         });
     }
@@ -140,14 +143,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     private void startUpdateLocations() {
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
+                  return;
         }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
 
@@ -161,15 +157,6 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void setHomeMarker(Location location) {
-        LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        MarkerOptions options = new MarkerOptions().position(userLocation)
-                .title("You are here")
-              .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
-                .snippet("Your Location");
-        homeMarker = mMap.addMarker(options);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15));
-    }
 
 
     @Override
