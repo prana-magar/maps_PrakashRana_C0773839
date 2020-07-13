@@ -245,13 +245,13 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     @Override
     public void onMapLongClick(LatLng latLng) {
 
-        System.out.println("long press");
-        setMarker(latLng);
 
     }
 
     @Override
     public void onMapClick(LatLng latLng) {
-        System.out.println("short clicked");
+        System.out.println("long press");
+        setMarker(latLng);
+
     }
 }
