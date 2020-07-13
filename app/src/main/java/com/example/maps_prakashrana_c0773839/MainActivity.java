@@ -311,7 +311,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                 .strokeWidth(0);
 
 
-        LatLng[] markersConvex = new LatLng[4];
+        LatLng[] markersConvex = new LatLng[POLYGON_SIDES];
         for (int i = 0; i < POLYGON_SIDES; i++) {
             markersConvex[i] = new LatLng(markers.get(i).getPosition().latitude,
                     markers.get(i).getPosition().longitude);
@@ -319,6 +319,47 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
 
         Vector<LatLng> sortedLatLong = ConvexHullJarvis.convexHull(markersConvex, POLYGON_SIDES);
+
+        // get sortedLatLong
+        Vector<LatLng> sortedLatLong2 =  new Vector<>();
+
+        // leftmost marker
+        int l = 0;
+        for (int i = 0; i < markers.size(); i++)
+            if (markers.get(i).getPosition().latitude < markers.get(l).getPosition().latitude)
+                l = i;
+
+        Marker currentMarker = markers.get(l);
+        sortedLatLong2.add(currentMarker.getPosition());
+        System.out.println(currentMarker.getPosition());
+        while(sortedLatLong2.size() != POLYGON_SIDES){
+            double minDistance = Double.MAX_VALUE;
+            Marker nearestMarker  = null;
+            for(Marker marker: markers){
+                if(sortedLatLong2.contains(marker.getPosition())){
+                    continue;
+                }
+
+
+                double curDistance = distance(currentMarker.getPosition().latitude,
+                        currentMarker.getPosition().longitude,
+                        marker.getPosition().latitude,
+                        marker.getPosition().longitude);
+
+                if(curDistance < minDistance){
+                    minDistance = curDistance;
+                    nearestMarker = marker;
+                }
+
+            }
+            if(nearestMarker != null){
+                sortedLatLong2.add(nearestMarker.getPosition());
+                currentMarker = nearestMarker;
+            }
+        }
+
+//        sortedLatLong = sortedLatLong2;
+        System.out.println(sortedLatLong);
 
         // add polygon as per convex hull lat long
         options.addAll(sortedLatLong);
