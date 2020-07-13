@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
     List<Marker> markers = new ArrayList<>();
     List<Marker> distanceMarkers = new ArrayList<>();
     List<Marker> cityMarkers = new ArrayList<>();
+    private double cityLabelLatOffset = 0.3;
 
 
 
@@ -145,7 +146,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
             startUpdateLocations();
             // zoom to canada
             LatLng canadaCenterLatLong = new LatLng(56.1304,-106.3468);
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(canadaCenterLatLong, 7));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(canadaCenterLatLong, 5));
 
         }
 
@@ -186,7 +187,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                 String cityLabelText  = marker.getTag().toString();
                 for(Marker labelMarker : cityMarkers){
                     if(labelMarker.getTag().toString().equals(cityLabelText)){
-                        labelMarker.setPosition(new LatLng(marker.getPosition().latitude - 0.08, marker.getPosition().longitude));
+                        labelMarker.setPosition(new LatLng(marker.getPosition().latitude - cityLabelLatOffset, marker.getPosition().longitude));
                     }
                 }
 
@@ -359,7 +360,7 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
         locationMarker.setTag(arr.get(0).toString());
 
-        LatLng labelLatLng = new LatLng(latLng.latitude - 0.08,latLng.longitude);
+        LatLng labelLatLng = new LatLng(latLng.latitude - cityLabelLatOffset,latLng.longitude);
         MarkerOptions optionsCityLabel = new MarkerOptions().position(labelLatLng)
                 .draggable(false)
                 .icon(createPureTextIcon(arr.get(0).toString()));
