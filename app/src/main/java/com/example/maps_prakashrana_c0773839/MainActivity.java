@@ -7,7 +7,10 @@ import androidx.core.app.ActivityCompat;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -20,8 +23,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
@@ -31,17 +36,21 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.IOException;
 import java.sql.ClientInfoStatus;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-public class MainActivity extends AppCompatActivity  implements OnMapReadyCallback,  GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener {
+public class MainActivity extends AppCompatActivity  implements OnMapReadyCallback,  GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnPolylineClickListener {
 
     private static final int REQUEST_CODE = 1;
     private static final int POLYGON_SIDES = 4;
     Polyline line;
     Polygon shape;
     List<Marker> markers = new ArrayList<>();
+    List<Marker> distanceMarkers = new ArrayList<>();
+
     ArrayList<Polyline> polylines = new ArrayList<>();
     //location with location manager and listner
     LocationManager locationManager;
@@ -62,11 +71,38 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
     }
 
+    public BitmapDescriptor createPureTextIcon(String text) {
+
+        Paint textPaint = new Paint(); // Adapt to your needs
+
+        textPaint.setTextSize(30);
+        float textWidth = textPaint.measureText(text);
+        float textHeight = textPaint.getTextSize();
+        int width = (int) (textWidth);
+        int height = (int) (textHeight);
+
+        Bitmap image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(image);
+
+        canvas.translate(0, height);
+
+        // For development only:
+        // Set a background in order to see the
+        // full size and positioning of the bitmap.
+        // Remove that for a fully transparent icon.
+        canvas.drawColor(Color.LTGRAY);
+
+        canvas.drawText(text, 0, 0, textPaint);
+        BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(image);
+        return icon;
+    }
+
     @Override
     public void onMapReady(final GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setOnMapLongClickListener(this);
         mMap.setOnMapClickListener(this);
+        mMap.setOnPolylineClickListener(this);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -140,8 +176,16 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
                     for(Polyline line: polylines){
                         line.remove();
                     }
+                    polylines.clear();
+
                     shape.remove();
                     shape = null;
+
+                    for(Marker currMarker: distanceMarkers){
+                        currMarker.remove();
+                    }
+                    distanceMarkers.clear();
+
                     drawShape();
                 }
             }
@@ -294,10 +338,12 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         for(int i =0 ; i<polyLinePoints.length -1 ; i++){
 
             LatLng[] tempArr = {polyLinePoints[i], polyLinePoints[i+1] };
-            polylines.add(mMap.addPolyline(new PolylineOptions()
+            Polyline currentPolyline =  mMap.addPolyline(new PolylineOptions()
                     .clickable(true)
                     .add(tempArr)
-                    .color(Color.RED)));
+                    .color(Color.RED));
+            currentPolyline.setClickable(true);
+            polylines.add(currentPolyline);
         }
 
 
@@ -305,16 +351,27 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
 
     private void clearMap() {
 
+        // remove city markers
         for (Marker marker : markers) {
             marker.remove();
         }
-
         markers.clear();
+
+        // remove polylines outer
         for(Polyline line: polylines){
             line.remove();
         }
+        polylines.clear();
+
+        // remove polygoon
         shape.remove();
         shape = null;
+
+        // remove distance markers
+        for (Marker marker : distanceMarkers) {
+            marker.remove();
+        }
+        distanceMarkers.clear();
 
     }
 
@@ -329,5 +386,47 @@ public class MainActivity extends AppCompatActivity  implements OnMapReadyCallba
         System.out.println("long press");
         setMarker(latLng);
 
+    }
+
+    private double distance(double lat1, double lon1, double lat2, double lon2) {
+        double theta = lon1 - lon2;
+        double dist = Math.sin(deg2rad(lat1))
+                * Math.sin(deg2rad(lat2))
+                + Math.cos(deg2rad(lat1))
+                * Math.cos(deg2rad(lat2))
+                * Math.cos(deg2rad(theta));
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515;
+        return (dist);
+    }
+
+
+
+    private double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
+    }
+
+    private double rad2deg(double rad) {
+        return (rad * 180.0 / Math.PI);
+    }
+
+    @Override
+    public void onPolylineClick(Polyline polyline) {
+        List<LatLng> points = polyline.getPoints();
+        LatLng firstPoint = points.remove(0);
+        LatLng secondPoint = points.remove(0);
+
+
+        double distance = distance(firstPoint.latitude,firstPoint.longitude,
+                secondPoint.latitude,secondPoint.longitude);
+        NumberFormat formatter = new DecimalFormat("#0.0");
+
+
+        LatLng center = LatLngBounds.builder().include(firstPoint).include(secondPoint).build().getCenter();
+        MarkerOptions options = new MarkerOptions().position(center)
+                .draggable(true)
+                .icon(createPureTextIcon(formatter.format(distance) + " KM"));
+        distanceMarkers.add(mMap.addMarker(options));
     }
 }
